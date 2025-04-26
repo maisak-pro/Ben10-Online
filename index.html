@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ben 10 Clásico</title>
+  <link rel="stylesheet" href="estilos.css" />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <meta name="description" content="Mirá online todos los capítulos de Ben 10 Clásico en orden y sin perder tu progreso.">
+  <meta name="keywords" content="Ben 10, Ben 10 clásico, ver online, capítulos, dibujos animados">
+  <meta name="author" content="Ulises" />
+
+  <style>
+    /* Estilo adicional SOLO para iframe */
+    iframe.video {
+      width: 100%;
+      max-width: 960px;
+      aspect-ratio: 16 / 9;
+      height: auto;
+      border-radius: 10px;
+      box-shadow: 0 0 20px #0f0;
+      display: block;
+      margin: 20px auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Logo -->
+  <img src="logo-ben10.png" alt="Ben 10 Clásico" class="logo" />
+
+  <!-- Selector de Capítulo -->
+  <label for="selector">Selecciona un capítulo:</label>
+  <select id="selector" onchange="seleccionarCapitulo(this.value)"></select>
+
+  <!-- Reproductor -->
+  <div id="contenedor-video">
+    <iframe id="video" class="video" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture" frameborder="0"></iframe>
+  </div>
+
+  <!-- Botones -->
+  <div class="botones">
+    <button onclick="anteriorCapitulo()">Anterior</button>
+    <button onclick="siguienteCapitulo()">Siguiente</button>
+  </div>
+
+  <!-- Script de funcionalidad -->
+  <script>
+    const total = 13;
+    let capActual = 1;
+
+    const selector = document.getElementById("selector");
+    const video = document.getElementById("video");
+
+    const videosVimeo = [
+      "1078816581", // 1
+      "1078818189", // 2
+      "1078818699", // 3
+      "1078819081",  // 4
+      "1078848454",  //5
+      "1078848947",  //6
+      "1078849262",   //7
+      "1078849503",  //8
+      "1078853780",  //9
+      "1078853990",  //10
+      "1078854221",   //11
+      "1078854983", //12
+      "1078855267" //13
+    ];
+
+    const nombresCapitulos = [
+      "Y fueron 10",             // 1
+      "Aprendiendo a ser héroe", // 2
+      "El Krakken",              // 3
+      "Visitando a los viejos",  // 4
+      "Buscando el Omnitrix",    // 5
+      "Trampa para turistas",    // 6
+      "Copiando poderes",        // 7
+      "La Alianza",              // 8
+      "La Última risa",          // 9
+      "La chica de la suerte",   // 10
+      "Un pequeño problema",     // 11
+      "Efectos secundarios",     // 12
+      "Secretos"                 // 13
+    ];
+ 
+    for (let i = 1; i <= total; i++) {
+      const option = document.createElement("option");
+      option.value = i;
+      option.textContent = nombresCapitulos[i - 1];
+      selector.appendChild(option);
+    }
+
+    function seleccionarCapitulo(numero) {
+      capActual = parseInt(numero);
+      localStorage.setItem("tiempoBen10", 0);
+      cargarCapitulo();
+    }
+
+    function anteriorCapitulo() {
+      if (capActual > 1) {
+        capActual--;
+        cargarCapitulo();
+      }
+    }
+
+    function siguienteCapitulo() {
+      if (capActual < total) {
+        capActual++;
+        cargarCapitulo();
+      }
+    }
+
+    function guardarProgreso() {
+      localStorage.setItem("capituloBen10", capActual);
+    }
+
+    function cargarCapitulo(inicioEn = 0) {
+      const vimeoID = videosVimeo[capActual - 1];
+      let url = `https://player.vimeo.com/video/${vimeoID}?autoplay=1`;
+
+      // Agregar tiempo solo si es mayor a 0
+      if (inicioEn > 0) {
+        url += `#t=${Math.floor(inicioEn)}s`;
+      }
+
+      video.src = url;
+      selector.value = capActual;
+      guardarProgreso();
+    }
+
+    // Guardar tiempo cada 10 segundos (opcional)
+    setInterval(() => {
+      if (video?.src.includes("vimeo.com")) {
+        localStorage.setItem("tiempoBen10", Date.now()); // Guardamos marca temporal
+      }
+    }, 10000);
+
+    // Al volver, preguntar si reanudar
+    function cargarProgreso() {
+      const capGuardado = localStorage.getItem("capituloBen10");
+      const tiempoGuardado = localStorage.getItem("tiempoBen10");
+
+      if (capGuardado && tiempoGuardado) {
+        const tiempoPasado = Math.floor((Date.now() - parseInt(tiempoGuardado)) / 1000);
+        capActual = parseInt(capGuardado);
+
+        const volver = confirm(`Eu, te quedaste en el capítulo ${capActual}. ¿Querés reanudar desde donde dejaste (hace ${tiempoPasado} segundos)?`);
+        if (volver) {
+          cargarCapitulo(tiempoPasado);
+        } else {
+          localStorage.setItem("tiempoBen10", 0);
+          cargarCapitulo();
+        }
+      } else {
+        cargarCapitulo();
+      }
+    }
+
+    cargarProgreso();
+  </script>
+
+  <footer style="text-align: center; margin-top: 40px; color: #888;">
+    <p>&copy;2025 Ulises - FanProject of Ben 10</p>
+  </footer>
+
+</body>
+</html>
