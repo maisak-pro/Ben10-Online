@@ -45,6 +45,7 @@
   </div>
 
   <!-- Script de funcionalidad -->
+  <script src="https://player.vimeo.com/api/player.js"></script> <!-- AGREGADO: para poder leer el tiempo del video -->
   <script>
     const total = 13;
     let capActual = 1;
@@ -56,34 +57,34 @@
       "1078816581", // 1
       "1078818189", // 2
       "1078818699", // 3
-      "1078819081",  // 4
-      "1078848454",  //5
-      "1078848947",  //6
-      "1078849262",   //7
-      "1078849503",  //8
-      "1078853780",  //9
-      "1078853990",  //10
-      "1078854221",   //11
-      "1078854983", //12
-      "1078855267" //13
+      "1078819081", // 4
+      "1078848454", // 5
+      "1078848947", // 6
+      "1078849262", // 7
+      "1078849503", // 8
+      "1078853780", // 9
+      "1078853990", // 10
+      "1078854221", // 11
+      "1078854983", // 12
+      "1078855267"  // 13
     ];
 
     const nombresCapitulos = [
-      "Y fueron 10",             // 1
-      "Aprendiendo a ser héroe", // 2
-      "El Krakken",              // 3
-      "Visitando a los viejos",  // 4
-      "Buscando el Omnitrix",    // 5
-      "Trampa para turistas",    // 6
-      "Copiando poderes",        // 7
-      "La Alianza",              // 8
-      "La Última risa",          // 9
-      "La chica de la suerte",   // 10
-      "Un pequeño problema",     // 11
-      "Efectos secundarios",     // 12
-      "Secretos"                 // 13
+      "Y fueron 10",
+      "Aprendiendo a ser héroe",
+      "El Krakken",
+      "Visitando a los viejos",
+      "Buscando el Omnitrix",
+      "Trampa para turistas",
+      "Copiando poderes",
+      "La Alianza",
+      "La Última risa",
+      "La chica de la suerte",
+      "Un pequeño problema",
+      "Efectos secundarios",
+      "Secretos"
     ];
- 
+
     for (let i = 1; i <= total; i++) {
       const option = document.createElement("option");
       option.value = i;
@@ -116,24 +117,26 @@
     }
 
     function cargarCapitulo(inicioEn = 0) {
-      const vimeoID = videosVimeo[capActual - 1];
-      let url = `https://player.vimeo.com/video/${vimeoID}?autoplay=1`;
+  const vimeoID = videosVimeo[capActual - 1];
+  let url = `https://player.vimeo.com/video/${vimeoID}?autoplay=1`; // <-- SIEMPRE autoplay=1
 
-      // Agregar tiempo solo si es mayor a 0
-      if (inicioEn > 0) {
-        url += `#t=${Math.floor(inicioEn)}s`;
-      }
+  if (inicioEn > 0) {
+    url += `#t=${Math.floor(inicioEn)}s`;
+  }
 
-      video.src = url;
-      selector.value = capActual;
-      guardarProgreso();
-    }
+  video.src = url;
+  selector.value = capActual;
+  guardarProgreso();
+}
 
-    // Guardar tiempo cada 10 segundos (opcional)
+    // Guardar segundo actual del video cada 10 segundos
     setInterval(() => {
-      if (video?.src.includes("vimeo.com")) {
-        localStorage.setItem("tiempoBen10", Date.now()); // Guardamos marca temporal
-      }
+      const player = new Vimeo.Player(video);
+      player.getCurrentTime().then(function(segundos) {
+        localStorage.setItem("tiempoBen10", segundos);
+      }).catch(function(error) {
+        console.error('Error al obtener el tiempo:', error);
+      });
     }, 10000);
 
     // Al volver, preguntar si reanudar
@@ -142,12 +145,16 @@
       const tiempoGuardado = localStorage.getItem("tiempoBen10");
 
       if (capGuardado && tiempoGuardado) {
-        const tiempoPasado = Math.floor((Date.now() - parseInt(tiempoGuardado)) / 1000);
         capActual = parseInt(capGuardado);
+        const tiempoEnSegundos = parseFloat(tiempoGuardado);
 
-        const volver = confirm(`Eu, te quedaste en el capítulo ${capActual}. ¿Querés reanudar desde donde dejaste (hace ${tiempoPasado} segundos)?`);
+        const minutos = Math.floor(tiempoEnSegundos / 60);
+        const segundos = Math.floor(tiempoEnSegundos % 60);
+        const tiempoFormateado = `${minutos}:${segundos.toString().padStart(2, "0")}`;
+
+        const volver = confirm(`Eu, te quedaste en el capítulo ${capActual} en el minuto ${tiempoFormateado}. ¿Querés reanudar?`);
         if (volver) {
-          cargarCapitulo(tiempoPasado);
+          cargarCapitulo(tiempoEnSegundos);
         } else {
           localStorage.setItem("tiempoBen10", 0);
           cargarCapitulo();
