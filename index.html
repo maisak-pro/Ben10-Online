@@ -11,16 +11,57 @@
   <meta name="author" content="Ulises" />
 
   <style>
-    /* Estilo adicional SOLO para iframe */
     iframe.video {
       width: 100%;
       max-width: 960px;
-      aspect-ratio: 16 / 9;
+      aspect-ratio: 16/9;
       height: auto;
       border-radius: 10px;
       box-shadow: 0 0 20px #0f0;
       display: block;
       margin: 20px auto;
+    }
+
+    .selector-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    select {
+      padding: 5px 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background: #1e1e1e;
+      color: white;
+    }
+
+    select:hover {
+      background: #333;
+    }
+
+    button, select {
+      margin: 10px;
+      padding: 15px 30px;
+      background: #1e1e1e;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.3s ease;
+    }
+
+    button:hover, select:hover {
+      background: #333;
+      transform: scale(1.05);
+    }
+
+    .botones {
+      margin-top: 20px;
     }
   </style>
 </head>
@@ -29,9 +70,20 @@
   <!-- Logo -->
   <img src="logo-ben10.png" alt="Ben 10 Clásico" class="logo" />
 
-  <!-- Selector de Capítulo -->
-  <label for="selector">Selecciona un capítulo:</label>
-  <select id="selector" onchange="seleccionarCapitulo(this.value)"></select>
+  <!-- Selector de Temporada + Capítulo -->
+  <div class="selector-container">
+    <label for="temporada-selector">Temporada:</label>
+    <select id="temporada-selector" onchange="cambiarTemporada(this.value)"></select>
+
+    <label for="capitulo-selector">Capítulo:</label>
+    <select id="capitulo-selector" onchange="seleccionarCapitulo(this.value)"></select>
+  </div>
+
+  <!-- Loader -->
+  <div id="loader" style="display: none; text-align: center; margin: 20px;">
+    <p style="font-size: 20px; color: white; margin-bottom: 10px;">Cargando...</p>
+    <img src="Omnitrix CARGANDO.gif" alt="Cargando..." style="width: 150px; height: auto;" />
+  </div>
 
   <!-- Reproductor -->
   <div id="contenedor-video">
@@ -44,52 +96,84 @@
     <button onclick="siguienteCapitulo()">Siguiente</button>
   </div>
 
-  <!-- Script de funcionalidad -->
-  <script src="https://player.vimeo.com/api/player.js"></script> <!-- AGREGADO: para poder leer el tiempo del video -->
+  <script src="https://player.vimeo.com/api/player.js"></script>
+
   <script>
-    const total = 13;
+    const temporadas = {
+      "1": {
+        plataforma: "vimeo",
+        videos: [
+          "1078816581", "1078818189", "1078818699", "1078819081", "1078848454", "1078848947",
+          "1078849262", "1078849503", "1078853780", "1078853990", "1078854221", "1078854983", "1078855267"
+        ],
+        nombres: [
+          "Y fueron 10", "Aprendiendo a ser héroe", "El Krakken", "Visitando a los viejos", "Buscando el Omnitrix",
+          "Trampa para turistas", "Copiando poderes", "La Alianza", "La Última risa", "La chica de la suerte",
+          "Un pequeño problema", "Efectos secundarios", "Secretos"
+        ]
+      },
+      "2": {
+        plataforma: "pixeldrain",
+        videos: [
+          "https://pixeldrain.com/u/t11HeuFa", "https://pixeldrain.com/u/T95nihDD",
+          "https://pixeldrain.com/u/mbrhF83i", "https://pixeldrain.com/u/yDrGfzjf",
+          "https://pixeldrain.com/u/WrSWEbvd", "https://pixeldrain.com/u/nnJyvcab",
+          "https://pixeldrain.com/u/wnQnF2h7", "https://pixeldrain.com/u/rG3TP47C",
+          "https://pixeldrain.com/u/7fshP97R", "https://pixeldrain.com/u/dsAqPoEJ",
+          "https://pixeldrain.com/u/YeUV4hGf", "https://pixeldrain.com/u/tgT6GUVZ", "https://pixeldrain.com/u/XNaAkHiu"
+        ],
+        nombres: [
+          "La verdad", "Un nuevo héroe", "Kevin regresa", "Gwen 10", "Gladiadores", "Los Luchadores Galácticos", "El campamento del terror",
+          "La mejor arma", "La suerte regresa", "El nuevo hotel", "El fantasma anda suelto", "Dr. Animo y el rayo mutante", "Los malos están de regreso"
+        ]
+      }
+    };
+
+    let temporadaActual = "1";
     let capActual = 1;
+    let advertenciaPixeldrainMostrada = false;
 
-    const selector = document.getElementById("selector");
+    const temporadaSelector = document.getElementById("temporada-selector");
+    const capituloSelector = document.getElementById("capitulo-selector");
     const video = document.getElementById("video");
+    const loader = document.getElementById("loader");
 
-    const videosVimeo = [
-      "1078816581", // 1
-      "1078818189", // 2
-      "1078818699", // 3
-      "1078819081", // 4
-      "1078848454", // 5
-      "1078848947", // 6
-      "1078849262", // 7
-      "1078849503", // 8
-      "1078853780", // 9
-      "1078853990", // 10
-      "1078854221", // 11
-      "1078854983", // 12
-      "1078855267"  // 13
-    ];
+    function mostrarLoader() {
+      loader.style.display = "block";
+      video.style.display = "none";
+    }
 
-    const nombresCapitulos = [
-      "Y fueron 10",
-      "Aprendiendo a ser héroe",
-      "El Krakken",
-      "Visitando a los viejos",
-      "Buscando el Omnitrix",
-      "Trampa para turistas",
-      "Copiando poderes",
-      "La Alianza",
-      "La Última risa",
-      "La chica de la suerte",
-      "Un pequeño problema",
-      "Efectos secundarios",
-      "Secretos"
-    ];
+    video.addEventListener("load", () => {
+      loader.style.display = "none";
+      video.style.display = "block";
+    });
 
-    for (let i = 1; i <= total; i++) {
-      const option = document.createElement("option");
-      option.value = i;
-      option.textContent = nombresCapitulos[i - 1];
-      selector.appendChild(option);
+    function cargarTemporadas() {
+      temporadaSelector.innerHTML = "";
+      Object.keys(temporadas).forEach(temp => {
+        const option = document.createElement("option");
+        option.value = temp;
+        option.textContent = `Temporada ${temp}`;
+        temporadaSelector.appendChild(option);
+      });
+    }
+
+    function cambiarTemporada(nombreTemporada) {
+      temporadaActual = nombreTemporada;
+      capActual = 1;
+      cargarCapitulos();
+      cargarCapitulo();
+    }
+
+    function cargarCapitulos() {
+      capituloSelector.innerHTML = "";
+      const { nombres } = temporadas[temporadaActual];
+      nombres.forEach((nombre, i) => {
+        const option = document.createElement("option");
+        option.value = i + 1;
+        option.textContent = nombre;
+        capituloSelector.appendChild(option);
+      });
     }
 
     function seleccionarCapitulo(numero) {
@@ -106,6 +190,7 @@
     }
 
     function siguienteCapitulo() {
+      const total = temporadas[temporadaActual].videos.length;
       if (capActual < total) {
         capActual++;
         cargarCapitulo();
@@ -114,49 +199,75 @@
 
     function guardarProgreso() {
       localStorage.setItem("capituloBen10", capActual);
+      localStorage.setItem("temporadaBen10", temporadaActual);
     }
 
     function cargarCapitulo(inicioEn = 0) {
-  const vimeoID = videosVimeo[capActual - 1];
-  let url = `https://player.vimeo.com/video/${vimeoID}?autoplay=1`; // <-- SIEMPRE autoplay=1
+      mostrarLoader(); // 👈 AGREGADO
 
-  if (inicioEn > 0) {
-    url += `#t=${Math.floor(inicioEn)}s`;
-  }
+      const temporada = temporadas[temporadaActual];
+      const videoID = temporada.videos[capActual - 1];
+      let url = "";
 
-  video.src = url;
-  selector.value = capActual;
-  guardarProgreso();
-}
+      if (temporada.plataforma === "vimeo") {
+        url = `https://player.vimeo.com/video/${videoID}?autoplay=1`;
+        if (inicioEn > 0) url += `#t=${Math.floor(inicioEn)}s`;
+      } else if (temporada.plataforma === "pixeldrain") {
+        url = `https://pixeldrain.com/api/file/${videoID.split("/").pop()}?stream`;
+        if (inicioEn > 0) url += `#t=${Math.floor(inicioEn)}s`;
 
-    // Guardar segundo actual del video cada 10 segundos
+        if (!advertenciaPixeldrainMostrada) {
+          alert("Atención: A partir de esta temporada, no se puede guardar el progreso");
+          advertenciaPixeldrainMostrada = true;
+        }
+      }
+
+      video.src = url;
+      capituloSelector.value = capActual;
+      guardarProgreso();
+    }
+
     setInterval(() => {
-      const player = new Vimeo.Player(video);
-      player.getCurrentTime().then(function(segundos) {
-        localStorage.setItem("tiempoBen10", segundos);
-      }).catch(function(error) {
-        console.error('Error al obtener el tiempo:', error);
-      });
+      const temporada = temporadas[temporadaActual];
+      if (temporada.plataforma === "vimeo") {
+        const player = new Vimeo.Player(video);
+        player.getCurrentTime().then(segundos => {
+          localStorage.setItem("tiempoBen10", segundos);
+        }).catch(error => console.error(error));
+      }
     }, 10000);
 
-    // Al volver, preguntar si reanudar
     function cargarProgreso() {
       const capGuardado = localStorage.getItem("capituloBen10");
       const tiempoGuardado = localStorage.getItem("tiempoBen10");
+      const temporadaGuardada = localStorage.getItem("temporadaBen10");
+
+      if (temporadaGuardada && temporadas[temporadaGuardada]) {
+        temporadaActual = temporadaGuardada;
+      }
+
+      cargarTemporadas();
+      temporadaSelector.value = temporadaActual;
+      cargarCapitulos();
 
       if (capGuardado && tiempoGuardado) {
         capActual = parseInt(capGuardado);
         const tiempoEnSegundos = parseFloat(tiempoGuardado);
 
-        const minutos = Math.floor(tiempoEnSegundos / 60);
-        const segundos = Math.floor(tiempoEnSegundos % 60);
-        const tiempoFormateado = `${minutos}:${segundos.toString().padStart(2, "0")}`;
+        const plataforma = temporadas[temporadaActual].plataforma;
+        if (plataforma === "vimeo") {
+          const minutos = Math.floor(tiempoEnSegundos / 60);
+          const segundos = Math.floor(tiempoEnSegundos % 60);
+          const tiempoFormateado = `${minutos}:${segundos.toString().padStart(2, "0")}`;
 
-        const volver = confirm(`Eu, te quedaste en el capítulo ${capActual} en el minuto ${tiempoFormateado}. ¿Querés reanudar?`);
-        if (volver) {
-          cargarCapitulo(tiempoEnSegundos);
+          const volver = confirm(`Te quedaste en ${temporadaActual}, capítulo ${capActual} en el minuto ${tiempoFormateado}. ¿Querés reanudar?`);
+          if (volver) {
+            cargarCapitulo(tiempoEnSegundos);
+          } else {
+            localStorage.setItem("tiempoBen10", 0);
+            cargarCapitulo();
+          }
         } else {
-          localStorage.setItem("tiempoBen10", 0);
           cargarCapitulo();
         }
       } else {
